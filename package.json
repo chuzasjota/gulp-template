@@ -1,0 +1,28 @@
+{
+  "name": "gulp-template",
+  "version": "1.0.0",
+  "description": "Template for task automation in gulp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuzasjota/gulp-template.git"
+  },
+  "author": "chuzasjota",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chuzasjota/gulp-template/issues"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^4.0.0",
+    "gulp-clean-css": "^3.7.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-flatten": "^0.3.1",
+    "gulp-less": "^3.3.2",
+    "gulp-notify": "^3.0.0",
+    "gulp-plumber": "^1.1.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-server-livereload": "^1.9.2",
+    "gulp-uglify": "^3.0.0",
+    "gulp-watch": "^4.3.11"
+  }
+}
