@@ -54,8 +54,7 @@ gulp.task('js_task',function(){
 
 gulp.task('component_css', function () {
     gulp.src('bower_components/**/*.min.css')
-	.pipe(concat('vendor.min.css'))
-	.pipe(uglify())
+	.pipe(concat('vendor.min.css'))	
 	.pipe(autoprefixer())
     .pipe(minifyCSS())
 	.pipe(flatten())
