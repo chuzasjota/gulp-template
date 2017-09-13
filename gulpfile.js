@@ -54,7 +54,7 @@ gulp.task('js_task',function(){
 
 gulp.task('component_css', function () {
     gulp.src('bower_components/**/*.min.css')
-	.pipe(concat('vendor.min.css'))	
+	// .pipe(concat('vendor.min.css'))	
 	.pipe(autoprefixer())
     .pipe(minifyCSS())
 	.pipe(flatten())
@@ -63,7 +63,7 @@ gulp.task('component_css', function () {
 
 gulp.task('component_js', function () {
     gulp.src('bower_components/**/*.min.js')
-	.pipe(concat('vendor.min.js'))
+	// .pipe(concat('vendor.min.js'))
 	.pipe(uglify())
 	.pipe(flatten())
 	.pipe(gulp.dest('public/js/'));
