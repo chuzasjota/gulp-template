@@ -1,95 +1,179 @@
-var gulp         = require('gulp'),
-    less         = require('gulp-less'),
-	sass 		 = require('gulp-sass'),
-    minifyCSS    = require('gulp-clean-css'),
-    autoprefixer = require('gulp-autoprefixer'),
-    concat       = require('gulp-concat'),
-    uglify       = require('gulp-uglify'),
-	flatten 	 = require('gulp-flatten'),
-	plumber 	 = require('gulp-plumber'),
-	notify 		 = require('gulp-notify'),
-    watch        = require('gulp-watch'),
-    server       = require('gulp-server-livereload');
+//Gulp packages
+var {gulp, src, dest, watch, series, parallel} = require('gulp')
+var del = require('del')
+var rename = require('gulp-rename')
+var plumber = require('gulp-plumber')
+//html
+var pug = require('gulp-pug')
+//Images
+var imagemin = require('gulp-imagemin')
+//Scripts
+var concat = require('gulp-concat')
+var uglify = require('gulp-terser')
+var optimizejs = require('gulp-optimize-js')
+// Styles
+var sass = require('gulp-sass')
+var postcss = require('gulp-postcss')
+var minify = require('cssnano')
+var prefix = require('autoprefixer')
+// SVGs
+var svgmin = require('gulp-svgmin');
+// BrowserSync
+var browserSync = require('browser-sync');
 
-var dirs = {
-	dev:'./dev',
-	prod:'./public'
+// Paths to project folders 
+var paths = {
+  input:'src/',
+  output:'dist/',
+  layoutH: 'src/**/*.html',
+  layoutP: 'src/**/*.pug',
+  scripts: {
+    input: 'src/js/*',
+    output:'dist/js/',
+  },
+  styles: {
+    input: 'src/sass/**/*.{scss,sass}',
+    output:'dist/css/',
+  },
+  svgs: {
+    input: 'src/images/**/*.svg',
+    output:'dist/images/',
+  },
+  images: {
+    input: 'src/images/**/*.{jpg,png}',
+    output:'dist/images/',
+  }
 }
 
-gulp.task('scss_task', function () {
-    // gulp.src(dirs.dev+'/css/*.scss')
-    gulp.src(dirs.dev+'/css/style.scss')
+// Work with Pug
+var pugUse = false
+
+//Gulp Tasks
+
+// Remove pre-existing content from output folders
+var cleanDist = function (done) {
+  // Clean the dist folder
+  del.sync([
+    paths.output
+  ]);
+  // Signal completion
+  return done()
+}
+
+// Optimize Images files
+var buildImages = function (done) {
+  return src(paths.images.input)
+  .pipe(plumber())
+  .pipe(
+    imagemin([
+      imagemin.gifsicle({ interlaced: true }),
+      imagemin.mozjpeg({ quality: 30, progressive: true }),
+      imagemin.optipng({ optimizationLevel: 1 })
+    ])
+  )
+  .pipe(dest(paths.images.output));
+}
+
+// Optimize SVG files
+var buildSVGs = function (done) {
+  // Optimize SVG files
+  return src(paths.svgs.input)
+  .pipe(svgmin())
+  .pipe(dest(paths.svgs.output));
+}
+
+//Validation Pug var
+if(pugUse) {
+  //Build pug files
+  var buildhtml = function (done) {
+    return src(paths.layoutP)
     .pipe(plumber())
-    .pipe(concat('style.min.css'))
-    .pipe(sass())
-    .pipe(autoprefixer())
-    .pipe(minifyCSS())
-    .pipe(plumber.stop())
-    .pipe(gulp.dest(dirs.prod+'/css'))
-    .pipe(notify("Save Styles Sass"))
-});
-
-gulp.task('less_task', function () {
-    // gulp.src(dirs.dev+'/css/*.less')
-    gulp.src(dirs.dev+'/less/style.less')
+    .pipe(pug({
+      pretty: true
+    }))
+    .pipe(dest(paths.output))
+  }
+}else{
+  //Build html files
+  var buildhtml = function (done) {
+    return src(paths.layoutH)
     .pipe(plumber())
-    .pipe(concat('style.min.css'))
-    .pipe(less())
-    .pipe(autoprefixer())
-    .pipe(minifyCSS())
-    .pipe(plumber.stop())
-    .pipe(gulp.dest(dirs.prod+'/css'))
-    .pipe(notify("Save Styles Less"))
-});
+    .pipe(dest(paths.output))
+  }
+}
 
-gulp.task('js_task',function(){
-	gulp.src(dirs.dev+'/js/*.js')
-	.pipe(plumber())
-	.pipe(concat('main.min.js'))
-	.pipe(uglify())
-	.pipe(plumber.stop())
-	.pipe(gulp.dest(dirs.prod+'/js'))
-	.pipe(notify("Save Scripts"))
-});
+// Build Sass files
+var buildStyles = function (done) {
+  return src(paths.styles.input)
+  .pipe(plumber())
+  .pipe(sass({
+    outputStyle: 'expanded',
+    sourceComments: true
+  }))
+  .pipe(postcss([
+    prefix({
+      cascade: true,
+      remove: true
+    })
+  ]))
+  .pipe(rename({suffix: '.min'}))
+  .pipe(postcss([
+    minify({
+      discardComments: {
+        removeAll: true
+      }
+    })
+  ]))
+  .pipe(dest(paths.styles.output))
+}
 
-gulp.task('component_css', function () {
-    gulp.src('bower_components/**/*.min.css')
-	// .pipe(concat('vendor.min.css'))	
-	.pipe(autoprefixer())
-    .pipe(minifyCSS())
-	.pipe(flatten())
-	.pipe(gulp.dest('public/css/'));
-});
+// Build Js files
+var buildJs = function (done) {
+  return src(paths.scripts.input)
+  .pipe(plumber())
+  .pipe(concat('main.min.js'))
+  .pipe(uglify())
+  .pipe(dest(paths.scripts.output))
+}
 
-gulp.task('component_js', function () {
-    gulp.src('bower_components/**/*.min.js')
-	// .pipe(concat('vendor.min.js'))
-	.pipe(uglify())
-	.pipe(flatten())
-	.pipe(gulp.dest('public/js/'));
-});
+// Start Server
+var startServer = function (done) {
+  // Initialize BrowserSync
+  browserSync.init({
+    server: {
+      baseDir: paths.output
+    }
+  });
+  // Signal completion
+  done()
+}
 
+// Reload the browser when files change
+var reloadBrowser = function (done) {
+  browserSync.reload();
+  done()
+}
 
-gulp.task('component_font', function () {
-    gulp.src('bower_components/**/fonts/*')
-	.pipe(flatten())
-	.pipe(gulp.dest('public/fonts/'));
-});
+// Watch for changes
+var watchSource = function (done) {
+  watch(paths.input, series(exports.default, reloadBrowser))
+  done()
+}
 
-gulp.task('server', function() {
-  gulp.src('public')
-    .pipe(server({
-      port: 8000,
-      livereload: true,
-      open: true
-    }));
-});
+// Export Tasks
 
-gulp.task('watch', ['scss_task', 'less_task', 'js_task'], function() {
-  gulp.watch(dirs.dev+'/css/*.scss', ['scss_task']);
-  gulp.watch(dirs.dev+'/css/*.less', ['less_task']);
-  gulp.watch(dirs.dev+'/js/*.js', ['js_task']);
-});
+//Default Dev Tasks
+exports.default = series(
+  parallel(
+    buildhtml,
+    buildStyles,
+    buildJs
+  )
+)
 
-gulp.task('build',['component_js', 'component_css', 'component_font']);
-gulp.task('default', ['build', 'watch', 'server']);
+// Watch and reload
+exports.watch = series(
+  exports.default,
+  startServer,
+  watchSource
+)
