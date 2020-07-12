@@ -1,3 +1,5 @@
-"# -- Carpetas y archivos gulp" 
-bower_components
+# Node
 node_modules
+
+## Os X
+.DS_Store
