@@ -167,7 +167,9 @@ exports.default = series(
   parallel(
     buildhtml,
     buildStyles,
-    buildJs
+    buildJs,
+    buildImages,
+    buildSVGs
   )
 )
 
